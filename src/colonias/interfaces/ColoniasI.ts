@@ -1,0 +1,3 @@
+interface ColoniasI{
+    name:string
+}
