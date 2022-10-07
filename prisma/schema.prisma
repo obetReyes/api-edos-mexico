@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id    Int    @id @default(autoincrement())
+  email String @unique(map: "email_UNIQUE") @db.VarChar(240)
+  hash  String @db.Text
+  apikeys APIkeys[]
+}
+model APIkeys{ 
+  id Int @id @default(autoincrement())
+  host  String
+  value String @unique(map:"value_UNIQUE")
+  usage String
+  count Int
+  usuario  usuarios @relation(fields: [usuarioEmail], references: [email], onDelete: Cascade)
+  usuarioEmail String 
+
+}
+
+model colonias {
+  id            Int         @id @default(autoincrement())
+  nombre        String      @default("") @db.VarChar(100)
+  ciudad        String?     @db.VarChar(50)
+  municipio     Int?
+  asentamiento  String?     @db.VarChar(25)
+  codigo_postal Int?
+  municipios    municipios? @relation(fields: [municipio], references: [id], onDelete: Cascade, map: "fk_municipio")
+
+  @@index([asentamiento], map: "index_asentamiento")
+  @@index([ciudad], map: "index_ciudad")
+  @@index([codigo_postal], map: "index_codigo_postal")
+  @@index([municipio], map: "index_municipio")
+  @@index([nombre], map: "index_nombre")
+}
+
+model estados {
+  id         Int          @id @default(autoincrement())
+  nombre     String       @default("") @db.VarChar(50)
+  pais       Int          @default(0)
+  paises     paises       @relation(fields: [pais], references: [id], onDelete: Cascade, map: "fk_pais")
+  municipios municipios[]
+
+  @@index([pais], map: "index_pais")
+}
+
+model municipios {
+  id       Int        @id @default(autoincrement())
+  nombre   String     @default("") @db.VarChar(50)
+  estado   Int        @default(0)
+  estados  estados    @relation(fields: [estado], references: [id], onDelete: Cascade, map: "fk_estado")
+  colonias colonias[]
+
+  @@index([estado], map: "index_estado")
+}
+
+model paises {
+  id      Int       @id @default(autoincrement())
+  nombre  String    @default("") @db.VarChar(50)
+  estados estados[]
+}

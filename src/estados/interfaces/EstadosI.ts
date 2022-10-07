@@ -1,3 +1,0 @@
-interface EstadosI{
-    name:string
-}

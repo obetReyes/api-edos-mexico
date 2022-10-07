@@ -1,3 +1,0 @@
-interface MunicipiosI{
-    name:string
-}
