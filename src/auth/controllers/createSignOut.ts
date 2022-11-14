@@ -1,21 +1,16 @@
-import { NextFunction, Request, Response } from "express";
+import {Request, Response } from "express";
+import tryCatch from "../../utils/tryCatch";
 
-export const createSignOUt  = async(req: Request, res: Response, next: NextFunction) => {
- try {
+export const createSignOUt =  tryCatch(async(req:Request, res:Response) => {
     res.cookie('access-token','',{
         maxAge:1,
-        httpOnly:true
+        httpOnly:true,
+        secure:true
     })
     res.status(200).json({
         "data":{
-            info:"el usuario cerro su sesion"
+            details:"el usuario cerro su sesion"
         }
-    })
- } catch (error) {
-   res.status(400).json({
-    "error":{
-        error
-    }
-   }) 
- }   
-}
+    })    
+})
+

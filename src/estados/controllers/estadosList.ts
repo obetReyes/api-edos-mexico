@@ -1,28 +1,19 @@
-import { NextFunction, Request, Response } from "express"
+import { Request, Response } from "express"
 import prisma from '../../../prisma/client'
+import tryCatch from "../../utils/tryCatch"
 
+export const EstadosList = tryCatch(async (req: Request, res: Response) => {
+    const estados = await prisma.estados.findMany({
+        select: {
+            id: true,
+            nombre: true
+        }
+    })
 
-export const EstadosList  = async(req:Request, res:Response, next:NextFunction) => {
-    const NAMESPACE:string = 'estados'
-    try {
-        const estados = await prisma.estados.findMany({
-            select:{
-                nombre:true
-            }
-        })
+    return res.status(200).json({
+        "data": {
+            estados
+        }
+    })
 
-        return res.status(200).json({
-            "data":{
-
-                estados
-            }
-        })   
-    } catch (error) {
-        return res.status(400).json({
-            "error":{
-                error
-            }
-        })
-    }
-}
-   
+})

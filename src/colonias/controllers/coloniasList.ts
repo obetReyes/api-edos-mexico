@@ -1,45 +1,97 @@
-import { NextFunction, Request, Response } from "express"
+import { Request, Response } from "express"
+import { AppError } from "../../utils/AppError"
 import prisma from '../../../prisma/client'
+import tryCatch from "../../utils/tryCatch"
 
-export const coloniasList  = async(req:Request, res:Response, next:NextFunction) => {
 
-    const {municipio:string} = req.params
+export const coloniasList = tryCatch(async (req: Request, res: Response) => {
+
+    const { municipio, estado } = req.params
+
     const encoded_municipio = encodeURIComponent(req.params.municipio).replace(/_/g, " ")
+    const encoded_estado = encodeURIComponent(req.params.estado).replace(/_/g, " ")
 
-    
-    try {
-        const colonias = await prisma.colonias.findMany({
-            where:{
-                municipios:{
+
+   
+
+    const colonias = await prisma.colonias.findMany({
+        where:{
+            
+            municipios:{
+                
+                nombre:{
+                    equals:encoded_municipio
+                },
+                estados:{
                     nombre:{
-                        equals: encoded_municipio
+                        endsWith:encoded_estado
                     }
                 }
-            },
-            select:{
-                nombre:true
+              
             }
-        })
-        if(colonias.length  < 1){
-            throw ('no existe un municipio con ese nombre')
+        },
+        select:{
+            id:true,
+            nombre:true
         }
-        return res.status(200).json({
-            "data":{
-                colonias
-            }
-        })
-    } catch (error) {
-        if(error === "no existe un municipio con ese nombre"){
-            return res.status(404).json({
-                 "error":{ 
-                     error
-                 }
-             })
-         }
-        return res.status(400).json({
-            "error":{
-                error
-            }
-        })
+    })
+
+
+    
+    if (colonias.length < 1) {
+        throw new AppError('error_municipio_encontrado', 'no existe un municipio con ese nombre', "", 404)
+    }else{
+        console.log(colonias)
     }
-}
+    return res.status(200).json({
+        "data": {
+            colonias
+        }
+    })
+    
+    
+    /*
+
+  let correct_estado:any = []
+    
+  estados?.municipios.forEach( async(mcpio) => {
+        
+        if(mcpio.nombre.toLocaleLowerCase() == municipio)
+        {
+          console.log(correct_estado)
+            return correct_estado.push(mcpio.id)
+    
+        }
+    })
+
+    const municipios =  await prisma.municipios.findUnique({
+        where:{
+            id:correct_estado[0]
+        }
+    })
+
+
+        const correct_colonias = await prisma.colonias.findMany({
+            where:{
+                nombre:encoded_municipio,
+                id:correct_estado
+            },
+            include:{
+                municipios:true
+            }
+        })
+    
+        await console.log(correct_colonias)
+        const colonias = await prisma.colonias.findMany({
+            where:{
+                nombre:encoded_municipio,
+                municipios:{
+                    id:correct_estado[0]
+                }
+            }
+        })
+       
+    
+*/    
+    
+});

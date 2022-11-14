@@ -2,11 +2,24 @@ import express, { Request, Response, NextFunction } from 'express';
 import prisma from '../../prisma/client';
 
 
+
+// in this module we are checking if the api key is valid we get the api key from the user and check if it belongs to the current user 
 export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
     
-    const host ='http://localhost:3001'
-    const api_key_value = req.query.api_key
-    const api_key_to_string = String(api_key_value)
+    const api_key_value = req.header('x-api-key')
+    
+    if(!api_key_value){
+        return res.status(401).json({
+            errors: [
+                {
+                    code:"error_api_key",
+                    details:"la api key no fue incluida en la peticion",
+                    href:"https://infomexico/#errores.fly.dev"
+                }
+            ]
+        })
+    }
+    
     try {
         
         let is_user_apiKey = await prisma.aPIkeys.findUnique({
@@ -14,64 +27,23 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
                 value: String(api_key_value)
             }
         })
-        
-        if (!is_user_apiKey) {
-            
-    
-            throw ('la api key no es valida')
-    
-        }
-       else {
-        if (String(host) === is_user_apiKey.host) {
-        
-            let today = new Date().toISOString().split('T')[0];
-            if(is_user_apiKey.usage === today){
-                if (is_user_apiKey.count > 0) {
-                    if(is_user_apiKey.count > 300){
-                        return res.status(429).json({
-                            error: {
-                                error: "has rebasado el limite de 300 llamadas a la api por dia"
-                            }
-                        })
-                    } else{
-                        await prisma.aPIkeys.update({
-                            where:{
-                                value:String(api_key_value)
-                            },
-                             data:{
-                                usage:today,
-                                count:{
-                                    increment:1
-                                }
-                             }
-                        })
-                        console.log('good api call', is_user_apiKey.count)
-                        return next()
-                    }
-                      
-                }
-            }else{
-                await prisma.aPIkeys.update({
-                    where: {
-                        value: String(api_key_value),
-                      },
-                      data: {
-                        usage:today,
-                        count:{
-                            increment:1
-                        }
-                      },
-                })
-            }
-            console.log('good api call', is_user_apiKey.count)
+        if(is_user_apiKey){
             return next()
         }
+        if (!is_user_apiKey) {
+            throw new Error('la api key es invalida')
+    
         }
-    } catch (error: any) {
+        }
+    catch (error: any) {
         return res.status(401).json({
-            error: {
-                error: error.message || error
-            }
+            errors: [
+                {
+                    code:"error_api_key",
+                    details:error.message || error,
+                    href:"https://infomexico/#errores.fly.dev"
+                }
+            ]
         })
     }
 }

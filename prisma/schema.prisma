@@ -7,18 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model usuarios {
   id    Int    @id @default(autoincrement())
   email String @unique(map: "email_UNIQUE") @db.VarChar(240)
   hash  String @db.Text
   apikeys APIkeys[]
+  
 }
+
 model APIkeys{ 
   id Int @id @default(autoincrement())
   host  String
   value String @unique(map:"value_UNIQUE")
-  usage String
-  count Int
   usuario  usuarios @relation(fields: [usuarioEmail], references: [email], onDelete: Cascade)
   usuarioEmail String 
 
@@ -28,7 +29,7 @@ model colonias {
   id            Int         @id @default(autoincrement())
   nombre        String      @default("") @db.VarChar(100)
   ciudad        String?     @db.VarChar(50)
-  municipio     Int?
+  municipio     Int?       
   asentamiento  String?     @db.VarChar(25)
   codigo_postal Int?
   municipios    municipios? @relation(fields: [municipio], references: [id], onDelete: Cascade, map: "fk_municipio")
@@ -42,7 +43,7 @@ model colonias {
 
 model estados {
   id         Int          @id @default(autoincrement())
-  nombre     String       @default("") @db.VarChar(50)
+  nombre     String       @unique @default("") @db.VarChar(50)
   pais       Int          @default(0)
   paises     paises       @relation(fields: [pais], references: [id], onDelete: Cascade, map: "fk_pais")
   municipios municipios[]

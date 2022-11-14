@@ -1,41 +1,39 @@
-import { NextFunction, Request, Response } from "express";
+
+import { Request, Response } from "express";
 import prisma from '../../../prisma/client'
+import tryCatch from "../../utils/tryCatch";
+import { AppError } from "../../utils/AppError";
 import { createToken } from "../../utils/jwt";
 import bcrypt from "bcrypt"
 
 
-export const createSignin = async(req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body
+export const createSignin = tryCatch(async (req: Request, res: Response) => {
+  const { email, password } = req.body
+  const signInUser = await prisma.usuarios.findUnique({
+    where: {
+      email: email,
+    },
+  })
+  if (!signInUser) {
+    throw new AppError('error_de_ingreso', 'las credenciales son invalidas', "", 401)
+  }
+  const storedHash = signInUser.hash
 
-    try {
-        const signInUser =  await prisma.usuarios.findUnique({
-            where: {
-              email: email,
-            },
-          })
-          if(!signInUser) {
-            throw('las credenciales so invalidas')
-          }
-          const storedHash = signInUser.hash
+  const matches = await bcrypt.compare(password, storedHash);
 
-            bcrypt.compare(password, storedHash).then((match) => {
-            if(!match){
-                throw('las credenciales son invalidas')
-            }else{
-              const acess_token = createToken(signInUser)
-           res.cookie('access-token', acess_token, {
-              
-            maxAge:7*24*60*60*1000,
-          httpOnly:true          
-        })
-          console.log(acess_token)
-                res.status(200).json({"data":{info:'el usuario ha iniciado sesion'}})
-            }
-          })
-    .catch ((error) => {
-        res.status(401).json({error:error})       
-    })    
-    } catch (error) {
-        res.status(401).json({error:error})  
-    }
-}
+  if (matches) {
+    const acess_token = createToken(signInUser)
+
+    res.cookie('access-token', acess_token, {
+
+      maxAge: 2 * 60 * 24 * 30 * 1000,
+      httpOnly: true
+    })
+    
+    res.status(200).json({ "data": { details: 'el usuario ha iniciado sesion' } })
+
+  } else {
+    throw new AppError('error_de_ingreso', 'las credenciales son invalidas', "", 401)
+  }
+
+})
